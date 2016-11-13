@@ -352,14 +352,12 @@ LLTD_{\%rear} = \frac{LT_{rear}}{LT_{front}+LT_{rear}} = 1 - LLTD_{\%front}
 \label{equ: load transfer dist rear}
 \end{equation}
 
-To determine chassis stiffness performance as described in Deakin et al., the difference in front and rear lateral load transfer distribution is compared to the difference in front and rear roll stiffness distribution. This metric has a maximum value of 1, corresponding to a ridged chassis, and is shown below:
+To determine chassis stiffness performance as described in Deakin et al., the relationship between LLTD and roll stiffness distribution (RSD) is considered. As described in section \ref{Background Research and Performance Indicators}, an ideal rigid chassis allows the LLTD to be proportional to the RSD, this means that if LLTD is a function of RSD, the relationship will be approximately linear. To this end, LLTD should be plotted vs RSD and the slope in the region of interest (the near linear portion of the plot where $30\% \leq RSD \leq 70\%$). This slope may be used as a metric to evaluate chassis performance and has a maximum value of 1, corresponding to a ridged chassis.
 
 \begin{equation}
-Index=\frac{|LLTD_{\%front}-LLTD_{\%rear}|}{|RSD_{\%front}-RSD_{\%rear}|}
+Index=\frac{\partial LLTD_{front}}{\partial RSD_{front}}
 \label{equ: chassis index}
 \end{equation}
-
-Where RSD is the suspension roll stiffness distribution as a percentage.
 
 \subsection{The Script} \label{The Script}
 The model described in section \ref{The Model} was used to create a MATLAB script that, given vehicle parameters, could calculate the lateral toad transfer and lateral load transfer distribution difference per roll stiffness distribution difference index for a range of weight distributions, suspension roll stiffness distributions, and chassis stiffness’s.
@@ -379,14 +377,14 @@ The first section of the script sets up vectors to iterate through chassis stiff
 
 Equations \ref{equ: sprung}, \ref{equ: unsprung front}, \ref{equ: unsprung rear}, \ref{equ: sprung front}, and \ref{equ: sprung rear} are used to calculate the moment experienced at the front and rear axles. Then, for each chassis stiffness and roll stiffness distribution, equations \ref{equ: model system}, \ref{equ: load transfer front}, and \ref{equ: load transfer rear} are used to calculate the load transfer at the front and rear wheels.
 
-Finally, equations \ref{equ: load transfer dist front} to \ref{equ: chassis index} are used to calculate the index measuring how much of the suspension roll stiffness distribution translates into lateral load transfer distribution. The chassis stiffness index value is an average over the first and last quarter of the roll stiffness distributions considered. This is an attempt to avoid the point where the index is singular (50-50 roll stiffness distribution), and to ignore the common crossover point in the data where mass distribution and roll stiffness distribution are opposite (see Section \ref{Conclusion}). The latter is an ideal case where mass distribution and roll stiffness distribution effectively cancel each other out, making the chassis stiffness in the idealized model inconsequential and telling us nothing about the chassis' impact on how effectively the suspension can be tuned.
+Finally, equations \ref{equ: load transfer dist front} to \ref{equ: chassis index} are used to calculate the index measuring how much of the suspension roll stiffness distribution translates into lateral load transfer distribution. This is done by fitting a linear curve to the data $LLTD_{\%front} = f(RSD{\%front})$, where the data is filtered such that only RSD corresponding to the middle half of the specified range is used (typically, the range 10\% to 90\% was passed to the function, making the range used 30\% to 70\%).
 
 The function in its entirety can be found in Appendix \ref{LLTD Scripts}.
 
 \subsubsection{LLTD.m} \label{LLTD.m}
 This script defines the variables used by calc\_lltf\_per\_rsd.m, defines what mass distributions will be considered, calls calc\_lltf\_per\_rsd.m, and interprets and plots the output from calc\_lltf\_per\_rsd.m.
 
-Each mass distribution (determined my the centre of mass location) is passed, along with the other required vehicle parameters, to calc\_lltf\_per\_rsd.m. The chassis stiffness value where transferTarget percent of the difference in roll stiffness distribution is seen as lateral load transfer distribution is determined, and this along with the chassis index vs chassis stiffness is plotted in figure 1.
+Each mass distribution (determined my the centre of mass location) is passed, along with the other required vehicle parameters, to calc\_lltf\_per\_rsd.m. The chassis stiffness value where slope of the LLTD vs RSD curve equals transferTarget is determined, and this along with the chassis index vs chassis stiffness is plotted in figure 1.
 
 When the middle weight distribution value is reached, curves of lateral load distribution expressed as the percentage of the load transfer that occurs at the front axle vs the roll stiffness distribution (again expressed as percent front) are plotted. This is done for four chassis stiffness' in figure 2. This shows how LLTD changes with roll stiffness distribution and how this relationship changes with chassis stiffness. Next, curves of lateral load distribution expressed as the percentage of the load transfer that occurs at the front axle vs chassis stiffness are plotted. This is done for three roll stiffness distributions to show how chassis stiffness changes the lateral load distribution for a given roll stiffness distribution.
 
@@ -395,6 +393,31 @@ Last, legends and axis labels are added to the plots for completeness.
 The output plots are presented and analyzed in section \ref{Conclusion} and the script can be found in its entirety in Appendix \ref{LLTD Scripts}.
 
 \section{Conclusion} \label{Conclusion}
+The scripts developed were run with weight distributions of 40, 50 and 60\% rear; roll stiffness distributions ranging from 10-90\% front, and chassis stiffness ranging from 1-6000 Nm/degree. Slope targets of 0.8, 0.85 and 0.9 were considered.
+
+The first output considered was the LLTD vs RSD plot for a range of chassis stiffness'. This is shown in Figure \ref{fig: LLTDvsRSD}. This plot demonstrates how the relationship between LLTD and RSD becomes increasingly linear with increasing chassis stiffness. The black dashed lines show linear curve fits to the portion of the data corresponding to roll stiffness distribution between 30 and 70\% front. This region is defined to be the "region of interest" as reasonable suspension setups will fall within this range.
+
+\begin{figure}[h]
+	\begin{center}
+		\includegraphics[width=0.75\textwidth]{"Figures/LLTDvsRSD".png}
+	\end{center}
+	
+	\caption{LLSD \% front plotted versus RSD \% Front for a range of chassis stiffness'}
+	\label{fig: LLTDvsRSD}
+\end{figure}
+
+The slope of the linear fit in Figure \ref{fig: LLTDvsRSD} increases with increasing chassis stiffness. These slopes were used to generate the plot in Figure \ref{fig: slopeVsChassisK}. To determine a chassis stiffness goal and to evaluate the 80\% translation between RSD and LLTD suggested by Deakin et al., lines corresponding to slopes of 0.8, 0.85 and 0.9 were also plotted. Based on the position of each slope point on the curves generated, it was decided that Deakin et al.'s suggestion of 80\% translation is lower than optimal. A slope of 0.85 more closely matches the midpoint between when the curves are nearly vertical and where the curves are nearly horizontal. Thus, the goal setting criteria of 85\% of RSD change resulting in LLTD change was chosen.
+
+% REF? RSD = weight dist + 2-3%, historic weight dist 48-52%, SUS adjustability ~6% => desired adjustability min 5% (weight dist + 2-3% = 50-55%) => dLLTD/dRSD 5/6=83.3333333%4
+
+\begin{figure}[h]
+	\begin{center}
+		\includegraphics[width=0.75\textwidth]{"Figures/slopeVsChassisK".png}
+	\end{center}
+	
+	\caption{$\frac{\partial LLTD_{\% front}}{\partial RSD_{\% front}}$ plotted versus chassis stiffness'}
+	\label{fig: slopeVsChassisK}
+\end{figure}
 
 \newpage
 \begin{thebibliography}{9}

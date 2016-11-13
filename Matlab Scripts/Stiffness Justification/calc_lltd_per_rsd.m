@@ -1,4 +1,4 @@
-function [k_chassis, diff_LLTD_per_RSD, LLT_front, LLT_rear] = ...
+function [k_chassis, dLLTD_by_dRSD, LLT_front, LLT_rear] = ...
     calc_lltd_per_rsd( mSprung, mUnsprung_front, mUnsprung_rear, hCG,...
     dist_cg_from_rear, rWheel_front, rWheel_rear, hRC_front, hRC_rear,...
     trackWidth_front, trackWidth_rear, wheelBase, kRoll, kRoll_pctFrontMin,...
@@ -30,12 +30,12 @@ function [k_chassis, diff_LLTD_per_RSD, LLT_front, LLT_rear] = ...
 %   - latAcc : [m/s^2] lateral acceleration to use for calculations
 % Returns :
 %   - k_chassis : [Nm/deg] vector for range of chassis stiffnesses considered
-%   - diff_LLTD_per_RSD : |LLTD_r-LLTD_f| / |RSD_r - RSD_f|, where RSD is
-%                         roll stiffness distribution as a percent and LLTD
-%                         is lateral load transfer distribution as a percent
-%                         averaged over RSD = 10-30% front and 70-90%
-%                         front. This ignores the near linear portion of
-%                         graph and the portion where |RSD_r - RSD_f| = 0
+%   - dLLTD_by_dRSD :   |LLTD_r-LLTD_f| / |RSD_r - RSD_f|, where RSD is
+%                       roll stiffness distribution as a percent and LLTD
+%                       is lateral load transfer distribution as a percent
+%                       averaged over RSD = 10-30% front and 70-90%
+%                       front. This ignores the near linear portion of
+%                       graph and the portion where |RSD_r - RSD_f| = 0
 %   - LLT_front : [N] Load transferred from the front inside wheel to the 
 %              front outside wheel. Rows vary roll stiffness distribution 
 %              from 10-90% front and columns vary chassis stiffness from 
@@ -92,18 +92,24 @@ function [k_chassis, diff_LLTD_per_RSD, LLT_front, LLT_rear] = ...
         end
     end
     
-    rearLoadDist = LLT_rear./(LLT_front + LLT_rear).*100;
-    frontLoadDist = LLT_front./(LLT_front + LLT_rear).*100;
+    rearLoadDist = LLT_rear./(LLT_front + LLT_rear);
+    frontLoadDist = LLT_front./(LLT_front + LLT_rear);
+    frontRollStiffnessDist = k_front ./ (k_front + k_rear);
+%     rollStiffness_diff = (k_front ./ (k_front + k_rear) - k_rear ./ (k_front + k_rear)) .* 100;
     
-    rollStiffness_diff = (k_front ./ (k_front + k_rear) - k_rear ./ (k_front + k_rear)) .* 100;
-    
-    loadDist_diff = frontLoadDist - rearLoadDist;   
-    diff_LLTD_per_RSD = zeros(1, length(k_chassis));
+%     loadDist_diff = frontLoadDist - rearLoadDist;   
+    dLLTD_by_dRSD = zeros(1, length(k_chassis));
     for iii = 1 : length(k_chassis)
-        diff_LLTD_per_RSD(iii) = abs(mean([loadDist_diff(1 : kRoll_dataPoints / 4,iii)', ...
-            loadDist_diff(kRoll_dataPoints * 3 / 4 : kRoll_dataPoints, iii)']...
-            ./ [rollStiffness_diff(1 : kRoll_dataPoints / 4), ...
-            rollStiffness_diff(kRoll_dataPoints * 3 / 4 : kRoll_dataPoints)])); 
+        y = frontLoadDist(kRoll_dataPoints / 4 : 3 * kRoll_dataPoints / 4,...
+            iii)';
+        x = frontRollStiffnessDist(kRoll_dataPoints / 4 : 3 *...
+            kRoll_dataPoints / 4);
+        fit = polyfit(x, y, 1);
+        dLLTD_by_dRSD(iii) = fit(1);
+%         dLLTD_by_dRSD(iii) = abs(mean([loadDist_diff(1 : kRoll_dataPoints / 4,iii)', ...
+%             loadDist_diff(kRoll_dataPoints * 3 / 4 : kRoll_dataPoints, iii)']...
+%             ./ [rollStiffness_diff(1 : kRoll_dataPoints / 4), ...
+%             rollStiffness_diff(kRoll_dataPoints * 3 / 4 : kRoll_dataPoints)])); 
     end
 end
 

@@ -26,19 +26,18 @@ mUnsprung_rear = 7.5; % Rear unsprung mass [kg]
 b = wheelBase.*[0.6, 0.5, 0.4]; % CG's longitudal position from rear axle
 % target percent of roll stiffness distribution difference that translates 
 % into lateral load transfer distribution difference
-tranferTarget = 0.9; 
+tranferTarget = [0.8, 0.85, 0.9]; 
 % set up colormap
 col=jet(length(b) + 1);
 
 % Generate curves for varrying dLLTD/dRSD vs k_chassis vs weight distribution
 figure(1)
 hold on
-figure(4)
-hold on
+
 h = zeros(1,3);
-hh = zeros(1,3);
+hh = zeros(1,4);
 for iii = 1 : length(b)
-    [kChassis, diff_LLTD_per_RSD, LLT_front, LLT_rear] = ...
+    [kChassis, dLLTD_by_dRSD, LLT_front, LLT_rear] = ...
                         calc_lltd_per_rsd( mSprung, mUnsprung_front, ...
                         mUnsprung_rear, hCG, b(iii), rWheel_front, rWheel_rear, ...
                         hRC_front, hRC_rear, trackWidth_front, ...
@@ -48,38 +47,50 @@ for iii = 1 : length(b)
     % line picking out the required chassis stiffness for 90% of 
     % |RSD_r - RSD_f| to translate to |LLTD_r-LLTD_f|
     figure(1)
-    ind = diff_LLTD_per_RSD - tranferTarget > 0;
-    ind = find(ind, 1, 'first');
-    plot([0, kChassis(ind), kChassis(ind)], [diff_LLTD_per_RSD(ind), ...
-        diff_LLTD_per_RSD(ind), 0], 'k')
-    h(iii) = plot(kChassis, diff_LLTD_per_RSD, 'color',col(iii,:));
-    
-    slopes = zeros(1, length(kChassis));
-    F_pctFront = LLT_front ./ (LLT_front + LLT_rear) * 100;
-    for jjj = 1 : length(kChassis)
-        fit = polyfit(linspace(10, 90, length(LLT_front(:, 1))), F_pctFront(:, jjj)', 1);
-        slopes(jjj) = fit(1);
+    for jjj = 1 : length(tranferTarget)
+        ind = dLLTD_by_dRSD - tranferTarget(jjj) > 0;
+        ind = find(ind, 1, 'first');
+        plot([0, kChassis(ind), kChassis(ind)], [dLLTD_by_dRSD(ind), ...
+            dLLTD_by_dRSD(ind), 0], 'k')
     end
-    figure(4)
-    hh(iii) = plot(kChassis, slopes, 'color', col(iii,:));
-    ind = slopes - tranferTarget > 0;
-    ind = find(ind, 1, 'first');
-    plot([0, kChassis(ind), kChassis(ind)], [slopes(ind), slopes(ind), 0], 'k')
+    h(iii) = plot(kChassis, dLLTD_by_dRSD, 'color',col(iii,:));
     
     if iii == round(length(b) / 2)
         % plot LLTD % front VS RSD % front for a variety of chassis
         % stiffnesses 
         figure(2)
         hold on
+        lower = length(LLT_front(:, 1)) / 4;
+        upper = length(LLT_front(:, 1)) * 3 / 4;
         F_pctFront = LLT_front ./ (LLT_front + LLT_rear) * 100;
-        plot(linspace(10, 90, length(LLT_front(:, 1))), F_pctFront(:, 16),...
-            'color', col(1, :))
-        plot(linspace(10, 90, length(LLT_front(:, 1))), F_pctFront(:, 50),...
-            'color', col(2, :))
-        plot(linspace(10, 90, length(LLT_front(:, 1))), F_pctFront(:, 200),...
-            'color', col(3,:))
-        plot(linspace(10, 90, length(LLT_front(:, 1))), F_pctFront(:, 600),...
-            'color', col(4, :))
+        hh(1) = plot(linspace(10, 90, length(LLT_front(:, 1))),...
+            F_pctFront(:, 16), 'color', col(1, :));
+        fit = polyfit(linspace(30, 70, length(LLT_front(:, 1)) / 2 + 1),...
+            F_pctFront(lower : upper, 16)', 1);
+        plot(linspace(30, 70, length(LLT_front(:, 1))), polyval(fit,...
+            linspace(30, 70, length(LLT_front(:, 1)))), 'k--');
+       
+        hh(2) = plot(linspace(10, 90, length(LLT_front(:, 1))),...
+            F_pctFront(:, 50), 'color', col(2, :));
+        fit = polyfit(linspace(30, 70, length(LLT_front(:, 1)) / 2 + 1),...
+            F_pctFront(lower : upper, 50)', 1);
+        plot(linspace(30, 70, length(LLT_front(:, 1))), polyval(fit,...
+            linspace(30, 70, length(LLT_front(:, 1)))), 'k--');
+       
+        hh(3) = plot(linspace(10, 90, length(LLT_front(:, 1))),...
+            F_pctFront(:, 200), 'color', col(3,:));
+        fit = polyfit(linspace(30, 70, length(LLT_front(:, 1)) / 2 + 1),...
+            F_pctFront(lower : upper, 200)', 1);
+        plot(linspace(30, 70, length(LLT_front(:, 1))), polyval(fit,...
+            linspace(30, 70, length(LLT_front(:, 1)))), 'k--');
+        
+        hh(4) = plot(linspace(10, 90, length(LLT_front(:, 1))),...
+            F_pctFront(:, 600), 'color', col(4, :));
+        fit = polyfit(linspace(30, 70, length(LLT_front(:, 1)) / 2 + 1),...
+            F_pctFront(lower : upper, 600)', 1);
+        plot(linspace(30, 70, length(LLT_front(:, 1))), polyval(fit,...
+            linspace(30, 70, length(LLT_front(:, 1)))), 'k--');
+        
         figure(3)
         hold on
         xDim = size(LLT_front, 1);
@@ -89,71 +100,29 @@ for iii = 1 : length(b)
             'color', col(2, :))
         plot(linspace(1, 6000, length(LLT_front(1, :))), F_pctFront(3 * xDim / 4, :),...
             'color', col(3,:))
-        
-%         % Determine vertical force distribution % Outside
-%         F_tires = calc_vertTireForces(LLT_front, LLT_rear, 0, 0, mSprung, ...
-%             mUnsprung_front, mUnsprung_rear, b(iii), wheelBase);
-%         F_tires_outside = F_tires(:, :, 1) + F_tires(:, :, 3);
-%         F_tires_inside = F_tires(:, :, 2) + F_tires(:, :, 4);
-%         F_tires_pctOutside = F_tires_outside ./ (F_tires_outside + F_tires_inside) .* 100;
-%         figure(4)
-%         hold on
-%         plot(linspace(10, 90, length(F_tires(:, 1, 1))), F_tires_pctOutside(:, 16), ...
-%             'color', col(1, :))
-%         plot(linspace(10, 90, length(F_tires(:, 1, 1))), F_tires_pctOutside(:, 50), ...
-%             'color', col(2, :))
-%         plot(linspace(10, 90, length(F_tires(:, 1, 1))), F_tires_pctOutside(:, 200), ...
-%             'color', col(3, :))
-%         plot(linspace(10, 90, length(F_tires(:, 1, 1))), F_tires_pctOutside(:, 600), ...
-%             'color', col(4, :))
-%         figure(5)
-%         hold on
-%         plot(linspace(1, 6000, length(F_tires(1, :, 1))), F_tires_pctOutside(xDim / 4, :), ...
-%             'color', col(1, :))
-%         plot(linspace(1, 6000, length(F_tires(1, :, 1))), F_tires_pctOutside(xDim / 2, :), ...
-%             'color', col(2, :))
-%         plot(linspace(1, 6000, length(F_tires(1, :, 1))), F_tires_pctOutside(3 * xDim / 4, :), ...
-%             'color', col(3, :))
     end
 end
 
 figure(1)
 xlabel('Chassis Stiffness [Nm/deg]')
-ylabel('|LLTD_r-LLTD_f| / |RSD_r - RSD_f|')
+ylabel('Region of Interest $\frac{\partial LLTF_{front}}{\partial RSD_{front}}$',...
+    'Interpreter', 'Latex')
 legend(h, {['Weight ' num2str(b(1) / wheelBase * 100) '% rear'], ...
-            ['Weight ' num2str(b(2) / wheelBase * 100) '% rear'], ...
-            ['Weight ' num2str(b(3) / wheelBase * 100) '% rear']},...
-            'Location', 'best')
-figure(4)
-xlabel('Chassis Stiffness [Nm/deg]')
-ylabel('dLLTF_front/dkChassis')
-legend(hh, {['Weight ' num2str(b(1) / wheelBase * 100) '% rear'], ...
             ['Weight ' num2str(b(2) / wheelBase * 100) '% rear'], ...
             ['Weight ' num2str(b(3) / wheelBase * 100) '% rear']},...
             'Location', 'best')
         
 figure(2)
-legend(['k chassis = ' num2str(round(kChassis(16)))], ['k chassis = ' num2str(round(kChassis(50)))], ...
-    ['k chassis = ' num2str(round(kChassis(200)))], ['k chassis = ' num2str(round(kChassis(600)))],...
+legend(hh, {['k chassis = ' num2str(round(kChassis(16)))],...
+    ['k chassis = ' num2str(round(kChassis(50)))], ...
+    ['k chassis = ' num2str(round(kChassis(200)))],...
+    ['k chassis = ' num2str(round(kChassis(600)))]},...
     'Location', 'best');
 xlabel('Stiffness Distribution % Front')
 ylabel('LLTD % Front')
 
 figure(3)
-legend('RSD % Front = 30', 'RSD % Front = 50', 'RSD % Front = 70', ...
+legend({'RSD % Front = 30', 'RSD % Front = 50', 'RSD % Front = 70'}, ...
     'Location', 'best');
 xlabel('Chassis Stiffness [Nm/deg]')
 ylabel('LLTD % Front')
-
-% figure(4)
-% legend(['k chassis = ' num2str(round(kChassis(16)))], ['k chassis = ' num2str(round(kChassis(50)))], ...
-%     ['k chassis = ' num2str(round(kChassis(200)))], ['k chassis = ' num2str(round(kChassis(600)))],...
-%     'Location', 'best');
-% xlabel('Stiffness Distribution % Front')
-% ylabel('VFD % Outside')
-
-% figure(5)
-% legend('RSD % Front = 30', 'RSD % Front = 50', 'RSD % Front = 70', ...
-%     'Location', 'best');
-% xlabel('Chassis Stiffness [Nm/deg]')
-% ylabel('VFD % Outside')
