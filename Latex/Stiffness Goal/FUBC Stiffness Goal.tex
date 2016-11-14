@@ -30,6 +30,7 @@
 	\newpage
 	\tableofcontents
 	\listoffigures
+	\listoftables
 
 \newpage
 	
@@ -94,7 +95,7 @@ While researching torsional stiffness goals, three different recommendations wer
 Due to the conflicting suggestions, this project will determine which of the suggestions are feasible for an FSEA car and determine if one of the feasible suggestions will be followed or if another should be developed.
 
 \section{Feasibility} \label{Feasibility}
-To evaluate stiffness feasibility, a MATLAB package was developed to solve forces in minimally stable, statically determinate 3D truss structures in which all members experience only tensile or compressive forces. A macro was also written to allow such truss structures to be extracted from 3D sketches in SolidWorks.
+To evaluate stiffness feasibility, a MATLAB package was developed to solve forces in minimally stable, statically determinate 3D truss structures in which all members experience only tensile or compressive forces. A macro was also written to allow such truss structures to be extracted from 3D sketches in SolidWorks. These scripts can be found in their entirety in Appendix \ref{FEA Scripts}.
 
 The initial intension of the package was to analyze a simplified version of the FUBC chassis, however it was soon determined that the chassis could not be analyzed in this way. Instead, the chassis was simplified to a square rectangular prism with length equal to the vehicle’s wheelbase and square side length ranging from the width of the front bulkhead to the designed track width for the FUBC 2017 car (Figure 1). The tubes in the prism were considered to be 1” OD (most tubes used in the 2016 FUBC care were this diameter) 0.057” thick tubes. This thickness is the length weighted average thickness of the tubes used in the 2016 FUBC car. 
 
@@ -360,7 +361,7 @@ Index=\frac{\partial LLTD_{front}}{\partial RSD_{front}}
 \end{equation}
 
 \subsection{The Script} \label{The Script}
-The model described in section \ref{The Model} was used to create a MATLAB script that, given vehicle parameters, could calculate the lateral toad transfer and lateral load transfer distribution difference per roll stiffness distribution difference index for a range of weight distributions, suspension roll stiffness distributions, and chassis stiffness’s.
+The model described in section \ref{The Model} was used to create a MATLAB script that, given vehicle parameters, could calculate the lateral toad transfer and proportion of roll stiffness distribution that translates into lateral load transfer distribution for a range of weight distributions, suspension roll stiffness distributions, and chassis stiffness’s.
 
 The script was broken into two parts:
 \begin{enumerate}
@@ -406,9 +407,11 @@ The first output considered was the LLTD vs RSD plot for a range of chassis stif
 	\label{fig: LLTDvsRSD}
 \end{figure}
 
-The slope of the linear fit in Figure \ref{fig: LLTDvsRSD} increases with increasing chassis stiffness. These slopes were used to generate the plot in Figure \ref{fig: slopeVsChassisK}. To determine a chassis stiffness goal and to evaluate the 80\% translation between RSD and LLTD suggested by Deakin et al., lines corresponding to slopes of 0.8, 0.85 and 0.9 were also plotted. Based on the position of each slope point on the curves generated, it was decided that Deakin et al.'s suggestion of 80\% translation is lower than optimal. A slope of 0.85 more closely matches the midpoint between when the curves are nearly vertical and where the curves are nearly horizontal. Thus, the goal setting criteria of 85\% of RSD change resulting in LLTD change was chosen.
+The slope of the linear fit in Figure \ref{fig: LLTDvsRSD} increases with increasing chassis stiffness. These slopes were used to generate the plot in Figure \ref{fig: slopeVsChassisK}. To determine a chassis stiffness goal and to evaluate the 80\% translation between RSD and LLTD suggested by Deakin et al., lines corresponding to slopes of 0.8, 0.85 and 0.9, and Milliken and Milliken's chassis stiffness suggestion of 3-5 times the suspension roll stiffness were also plotted. 
 
-% REF? RSD = weight dist + 2-3%, historic weight dist 48-52%, SUS adjustability ~6% => desired adjustability min 5% (weight dist + 2-3% = 50-55%) => dLLTD/dRSD 5/6=83.3333333%4
+To determine a stiffness goal, the desired suspension roll stiffness tuning range must be determined. The desired roll stiffness distribution is determined by the vehicles static mass distribution. From OptimumG's technical papers \cite{OptimumG}, the baseline roll stiffness distribution should be front biased by the static weight distribution plus 5\% ($RSD_{\%front} = $weight distribution$_{\%front} + 5$). Suspension is typically designed assuming a rigid chassis, so we can consider this to be equivalent to a desired lateral load transfer distribution. Historically, the static weight distribution of the Formula UBC cars has been in the range of 48-52\% front. Based on this historic weight distribution variation and assuming suspension is designed for the midpoint 50-50 weight distribution, the lateral load transfer distribution should be able to be tuned by 5\% ($\pm2\%$ from the design distribution) to account for deviation from even weight distribution between the front and rear of the vehicle. In the past, the Formula UBC suspension roll stiffness has been capable of tuning exactly 5\%. For the 2017 car, an improvement in the amount of tuning possible was desired; the suspension team believes that the 2017 setup will allow roll stiffness tuning of 6\%. In order for the effective tuning capabilities to reach at least the 5\% goal, the chassis must be stiff enough to allow 83\% of suspension tuning to translate into lateral load transfer distribution tuning.
+
+This minimum slope of 0.83 is slightly higher than Deakin et al.'s suggestion of 0.8 and substantially less than Milliken and Milliken's suggestion (which corresponds to a slope between 0.93 and 0.96). Figure \ref{fig: slopeVsChassisK} shows that increasing chassis stiffness exhibits diminishing returns of $\frac{\partial LLTD}{\partial RSD}$. Increasing the proportion of roll stiffness distribution that results in lateral load transfer distribution from 0.8 to 0.85 requires a chassis stiffness increase of about 300 Nm/degree, while increasing it another 5\% to 0.9 requires an additional 600 Nm/degree of chassis stiffness. Based on the determined minimum slope of 0.83 and the observed diminishing returns of increased chassis stiffness, a chassis should be designed to achieve a stiffness resulting in at least 85\% of the suspension roll stiffness distribution correlating to lateral load transfer distribution. 
 
 \begin{figure}[h]
 	\begin{center}
@@ -418,6 +421,49 @@ The slope of the linear fit in Figure \ref{fig: LLTDvsRSD} increases with increa
 	\caption{$\frac{\partial LLTD_{\% front}}{\partial RSD_{\% front}}$ plotted versus chassis stiffness'}
 	\label{fig: slopeVsChassisK}
 \end{figure}
+
+It is also interesting to observe that the static weight distribution has very little effect on the relationship between chassis stiffness and the ability of lateral load distribution to be effected by suspension roll stiffness distribution. Figure \ref{fig: slopeVsChassisK} shows that over a 20\% range of weight distributions, the curves of $\frac{\partial LLTD}{\partial RSD}$ are indistinguishable. The takeaway here is that, although absolute static weight distribution must be considered for suspension design, the deviation in weight distribution from the predicted value is much more important than the absolute weight distribution when setting a chassis torsional stiffness goal. Therefor, accurate prediction of the vehicle's static weight distribution is important both to allow suspension design optimization and to ensure that the designed chassis stiffness allows suspension tuning to be effective.
+ 
+\subsection{Application of Results}
+The results of this project were applied to the predicted 2017 Formula UBC car and compared to the predicted and measured stiffness of the 2016 car. The predicted vehicle parameters for the 2017 car are listed in Table \ref{table: 2017Car}. The 2016 car stiffness predicted by FEA was 1058 Nm/degree and the stiffness obtained through physical testing was 1039 Nm/degree.
+
+\begin{table}[H]
+	\begin{center}
+		\begin{tabular}{|c|c|}
+			\hline
+			Vehicle Property & Value [unit]\\
+			\hline
+			CG Height & 0.31122 [m]\\
+			\hline
+			Wheel Radius & 10 [in]\\
+			\hline
+			Front Roll Centre Height & 1.906 [in]\\
+			\hline
+			Rear Roll Centre Height & 2.234 [in]\\
+			\hline
+			Front Track Width & 48 [in]\\
+			\hline
+			Rear Track Width & 47 [in]\\
+			\hline
+			Wheel Base & 60.5 [in]\\
+			\hline
+			Total Suspension Roll Stiffness & 850 [Nm/degree]\\
+			\hline
+			Sprung Mass (including driver) & 244 [kg]\\
+			\hline
+			Front Unsprung Mass & 8 [kg]\\
+			\hline
+			Rear Unsprung Mass & 7.5 [kg]\\
+			\hline
+			Static Weight Distribution & 50 [\% front]\\
+			\hline
+		\end{tabular}
+		\caption{2017 FUBC predicted vehicle parameters}
+		\label{table: 2017Car}
+	\end{center}
+\end{table}
+
+The figures shown earlier in the document were generated using the values listed in Table \ref{table: 2017Car}. Using the method for setting a torsional stiffness goal developed through this project, the target stiffness for the 2017 chassis should be about 1100 Nm/degree. Comparing this value to the 2016 car's stiffness, this goal seems reasonable. Although the goal is slightly higher than last year's stiffness, it should be attainable; further, it validates the team's past "by feel" determination that the chassis stiffness was adequate. If the stiffness of the 2016 car was duplicated with the 2017 car's parameters, the model suggests that about 84.5\% of roll stiffness distribution adjustments would translate into lateral load transfer distribution. This value is still above the determined minimum of 83.3\%.
 
 \newpage
 \begin{thebibliography}{9}
@@ -441,12 +487,16 @@ The slope of the linear fit in Figure \ref{fig: LLTDvsRSD} increases with increa
 	\textit{Race Car Vehicle Dynamics}.
 	SAE International, 1994. 
 	
+	\bibitem{OptimumG}
+	Matt Giaraffa.
+	\textit{Tech Tip: Springs \& Dampers, Part Two: Attack of the Units}
+	OptimumG. Retrieved November 13, 2016, from http://www.optimumg.com/technical/technical-papers.
 	\label{References}
 \end{thebibliography}
 
+\newpage
 \begin{appendices}
-	\section{Truss FEA Scripts} \label{FEA Scripts}
-	
-	\section{LLTD Scripts} \label{LLTD Scripts}
+	\input{"AppendixA.tex"}
+	\input{"AppendixB.tex"}
 \end{appendices}
 \end{document}
