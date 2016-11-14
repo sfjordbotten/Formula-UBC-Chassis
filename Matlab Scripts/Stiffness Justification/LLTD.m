@@ -34,7 +34,8 @@ col=jet(length(b) + 1);
 figure(1)
 hold on
 
-h = zeros(1,3);
+hInd = 1;
+h = zeros(1,5);
 hh = zeros(1,4);
 for iii = 1 : length(b)
     [kChassis, dLLTD_by_dRSD, LLT_front, LLT_rear] = ...
@@ -53,7 +54,28 @@ for iii = 1 : length(b)
         plot([0, kChassis(ind), kChassis(ind)], [dLLTD_by_dRSD(ind), ...
             dLLTD_by_dRSD(ind), 0], 'k')
     end
-    h(iii) = plot(kChassis, dLLTD_by_dRSD, 'color',col(iii,:));
+    rsX3 = rollStiffness * 3;
+    rsX5 = rollStiffness * 5;
+    index_rsX3 = interp1(kChassis, dLLTD_by_dRSD, rsX3);
+    index_rsX5 = interp1(kChassis, dLLTD_by_dRSD, rsX5);
+    
+    if iii == 1
+        h(hInd) = plot([0, rsX3, rsX3], [index_rsX3, index_rsX3, 0],...
+            '--', 'color', [1, 0.5, 0]);
+        h(hInd + 1) = plot([0, rsX5, rsX5], [index_rsX5, index_rsX5, 0], 'r--');
+        hInd = hInd + 2;
+        text(rsX3, index_rsX3 - 0.025, ['\leftarrow (', num2str(rsX3), ', ',...
+            num2str(round(index_rsX3, 3)), ')'])
+        text(rsX5, index_rsX5 - 0.025, ['\leftarrow (', num2str(rsX5), ', ',...
+            num2str(round(index_rsX5,3)), ')'])
+    else
+        plot([0, rsX3, rsX3], [index_rsX3, index_rsX3, 0], '--',...
+            'color', [1, 0.5, 0]);
+        plot([0, rsX5, rsX5], [index_rsX5, index_rsX5, 0], 'r--');
+    end
+    
+    h(hInd) = plot(kChassis, dLLTD_by_dRSD, 'color',col(iii,:));
+    hInd = hInd + 1;
     
     if iii == round(length(b) / 2)
         % plot LLTD % front VS RSD % front for a variety of chassis
@@ -107,7 +129,9 @@ figure(1)
 xlabel('Chassis Stiffness [Nm/deg]')
 ylabel('Region of Interest $\frac{\partial LLTF_{front}}{\partial RSD_{front}}$',...
     'Interpreter', 'Latex')
-legend(h, {['Weight ' num2str(b(1) / wheelBase * 100) '% rear'], ...
+legend(h, {'kChassis = 3X roll stiffness',...
+            'kChassis = 5X roll stiffness',...
+            ['Weight ' num2str(b(1) / wheelBase * 100) '% rear'], ...
             ['Weight ' num2str(b(2) / wheelBase * 100) '% rear'], ...
             ['Weight ' num2str(b(3) / wheelBase * 100) '% rear']},...
             'Location', 'best')
